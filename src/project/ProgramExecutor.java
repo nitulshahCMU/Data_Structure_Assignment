@@ -31,26 +31,27 @@ public class ProgramExecutor {
 				workerInputs.add(new WorkerInput(start, end));
 				count--;
 			}
-		
 			bufferedReader.close();
-			
+
 			// calculate output
+			List<Integer> effectiveLosses = new LinkedList<Integer>();
 			Collections.sort(workerInputs);
-	
+
 			int numberOfWrokers = workerInputs.size();
 			int totalCoveredTime = 0;
-	
+
 			for (count = 0; count < numberOfWrokers; count++) {
-	
+
 				WorkerInput currentWorker = workerInputs.get(count);
 				WorkerInput previousWorker = (count == 0) ? null : workerInputs.get(count - 1);
 				WorkerInput nextWorker = (count == numberOfWrokers - 1) ? null : workerInputs.get(count + 1);
-	
+
 				totalCoveredTime = totalCoveredTime + getIndividualCoverage(currentWorker, previousWorker, nextWorker);
+				effectiveLosses.add(getEffectiveLoss(currentWorker, previousWorker, nextWorker));
 			}
-	
-			int outPut = totalCoveredTime - getMinimumEffectiveLossTime(workerInputs);
-	
+
+			Collections.sort(effectiveLosses);
+			int outPut = totalCoveredTime - effectiveLosses.get(0);
 			// write output
 			
 			BufferedWriter bw = null;
@@ -62,9 +63,8 @@ public class ProgramExecutor {
 			bw.close();
 			fw.close();
 		}
-		//sSystem.out.println("End of program");
+		//System.out.println("End of program");
 	}
-
 	private static int getIndividualCoverage(WorkerInput currentWorker, WorkerInput previousWorker,
 			WorkerInput nextWorker) {
 
@@ -80,36 +80,23 @@ public class ProgramExecutor {
 		return endPoint - startPoint;
 	}
 
-	private static int getMinimumEffectiveLossTime(List<WorkerInput> workerInputs) {
+	private static int getEffectiveLoss(WorkerInput currentWorker, WorkerInput previousWorker, WorkerInput nextWorker) {
 
-		List<Integer> effectiveLosses = new LinkedList<Integer>();
-		int numberOfWrokers = workerInputs.size();
+		int startPoint = currentWorker.getStart();
+		int endPoint = currentWorker.getEnd();
 
-		for (int count = 0; count < numberOfWrokers; count++) {
-
-			WorkerInput currentWorker = workerInputs.get(count);
-			WorkerInput previousWorker = (count == 0) ? null : workerInputs.get(count - 1);
-			WorkerInput nextWorker = (count == numberOfWrokers - 1) ? null : workerInputs.get(count + 1);
-
-			int startPoint = currentWorker.getStart();
-			int endPoint = currentWorker.getEnd();
-
-			if (previousWorker != null) {
-				if (startPoint < previousWorker.getEnd()) {
-					startPoint = previousWorker.getEnd();
-				}
+		if (previousWorker != null) {
+			if (startPoint < previousWorker.getEnd()) {
+				startPoint = previousWorker.getEnd();
 			}
-
-			if (nextWorker != null) {
-				if (endPoint > nextWorker.getStart()) {
-					endPoint = nextWorker.getStart();
-				}
-			}
-
-			effectiveLosses.add(endPoint - startPoint);
 		}
 
-		Collections.sort(effectiveLosses);
-		return effectiveLosses.get(0);
+		if (nextWorker != null) {
+			if (endPoint > nextWorker.getStart()) {
+				endPoint = nextWorker.getStart();
+			}
+		}
+
+		return endPoint - startPoint;
 	}
 }
